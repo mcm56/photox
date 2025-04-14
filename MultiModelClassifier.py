@@ -114,7 +114,7 @@ class MultiModelClassifier:
 
     def predict(self, image_path, top_k=5):
         """执行预测"""
-        image = Image.open(image_path)
+        image = Image.open(image_path).convert("RGB")
         input_tensor = self.preprocess(image).unsqueeze(0).to(self.device)
 
         with torch.no_grad():

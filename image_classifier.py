@@ -18,7 +18,7 @@ class ImageClassifier:
     def predict(self,image_name):
      # 图像预处理（自动匹配权重对应的预处理）
       preprocess = models.ResNet50_Weights.DEFAULT.transforms()
-      image = Image.open(image_name)
+      image = Image.open(image_name).convert("RGB")
       input_tensor = preprocess(image).unsqueeze(0)
 
      # 推理

@@ -6,10 +6,13 @@ from MultiModelClassifier import MultiModelClassifier
 
 
 # 自定义设置
-classifier =MultiModelClassifier(
-    model_name="inception_v3",
-    weights="DEFAULT"
-)
+#classifier =MultiModelClassifier(
+#   model_name="inception_v3",
+#   weights="DEFAULT"
+#)
+
+#一般模型设置，默认为resnet50
+classifier=ImageClassifier()
 
 results = classifier.predict("aaa.png")
 
