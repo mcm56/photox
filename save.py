@@ -22,8 +22,8 @@ def upload_to_qiniu(access_key, secret_key, bucket_name, file_path, key):
     ret, info = put_file(token, key, file_path)
 
     if ret and ret.get('key') == key:
-        # 构建外链URL（假设使用测试域名，生产环境建议绑定自定义域名）
-        base_url = 'https://portal.qiniu.com/cdn/domain/sv1luzogb.hd-bkt.clouddn.com'  # 替换为你的空间域名
+
+        base_url = 'http://sv1luzogb.hd-bkt.clouddn.com' 
         url = f'{base_url}/{key}'
         return url
     else:
