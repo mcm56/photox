@@ -41,9 +41,9 @@ def upload_and_set_metadata(access_key, secret_key, bucket_name, file_path, key,
     # 构造完整请求路径
     request_path = f"/chgm/{encoded_entry}/mime/{encoded_mime}/{'/'.join(meta_parts)}"
 
-    # 手动生成签名（关键修改点）
+    # 手动生成签名
     signing_str = f"POST {request_path}\nHost: rs.qiniuapi.com\nContent-Type: application/x-www-form-urlencoded\n\n"
-    secret_key = q.get_secret_key()  # 正确获取密钥的方法
+    secret_key = q.get_secret_key()  
     sign = hmac.new(
         secret_key,
         signing_str.encode(),
