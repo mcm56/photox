@@ -28,7 +28,7 @@ class ImageClassifier:
 
     # 解析结果
       probabilities = torch.nn.functional.softmax(output[0], dim=0)
-      top_probs, top_indices = torch.topk(probabilities, 5)
+      top_probs, top_indices = torch.topk(probabilities, 3)
 
     # 转换为Python数值
       top_probs = top_probs.cpu().numpy()

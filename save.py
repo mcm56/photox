@@ -54,14 +54,16 @@ def upload_and_set_metadata(access_key, secret_key, bucket_name, file_path, key,
     # 构造元数据参数
     meta_parts = []
     metadata = {
-        "user": "1",
-      #  "tags": ",".join(tags),
-       # "category": category
+        "x-qn-meta-user": "user01",
+        "x-qn-meta-tags": ",".join(tags),
+        "x-qn-meta-category": category
     }
     meta_key = "x-qn-meta-user"
-    meta_value = "1"
-    request_path = (f"/chgm/{encodedEntryURI}/mime/{urlsafe_base64_encode('image/png')}/"
-                    f"{urlsafe_base64_encode(meta_key).replace("=","")}/{urlsafe_base64_encode(meta_value).replace("=","")}")
+    meta_value = "aaa"
+    request_path = (f"/chgm/{encodedEntryURI}/mime/{urlsafe_base64_encode("img/jpeg")}/"
+                  f"x-qn-meta-user/{urlsafe_base64_encode(metadata["x-qn-meta-user"])}/"
+                    f"x-qn-meta-tags/{urlsafe_base64_encode(metadata["x-qn-meta-tags"])}/"
+                    f"x-qn-meta-category/{urlsafe_base64_encode(metadata["x-qn-meta-category"])}")
     full_url = f"https://rs.qiniuapi.com{request_path}"
 
     # 4. 使用SDK生成签名（推荐）
@@ -70,6 +72,7 @@ def upload_and_set_metadata(access_key, secret_key, bucket_name, file_path, key,
 
     # 5. 发送请求
     response = requests.post(full_url, headers=headers)
+    print(response.text)
     print("Request Path:", request_path)
     print("Full URL:", full_url)
     print("Token:", token)
@@ -88,23 +91,7 @@ if __name__ == "__main__":
     bucket_name = "photoxw"
     local_file = "shi2.jpg"
     file_key = f"images/{local_file}"
-   # tags,category=ai_image(local_file)
-    tags=["aaa","sas"]
-    category="ddd"
+    tags,category=ai_image(local_file)
     url = upload_and_set_metadata(access_key, secret_key, bucket_name, local_file, file_key, tags, category)
     if url:
         print("文件外链:", url)
-
-        # 验证元数据
-        q = Auth(access_key, secret_key)
-        bucket_manager = BucketManager(q)
-        ret, info = bucket_manager.stat(bucket_name, file_key)
-
-        if ret:
-            print("元数据:", {
-                "user": ret.get("x-qn-meta-user"),
-                "tags": ret.get("x-qn-meta-tags", "").split(","),
-                "category": ret.get("x-qn-meta-category", "未设置")
-            })
-        else:
-            print("元数据获取失败:", info.text_body)
