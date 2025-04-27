@@ -4,9 +4,28 @@ import time
 import hmac
 import hashlib
 from urllib.parse import quote
+import base64
+from sympy.integrals.meijerint_doc import category
 
 from ai_image import ai_image
 
+
+def hmac_sha1(signing_str: str, secret_key: str) -> str:
+    """
+    生成 HMAC-SHA1 签名
+    :param signing_str: 待签名的字符串
+    :param secret_key: 密钥（需与API要求一致，如七牛云的SecretKey）
+    :return: Base64编码的签名结果
+    """
+    # 将密钥和字符串转换为字节（UTF-8编码）
+    key_bytes = secret_key.encode('utf-8')
+    msg_bytes = signing_str.encode('utf-8')
+
+    # 计算 HMAC-SHA1 摘要
+    digest = hmac.new(key_bytes, msg_bytes, hashlib.sha1).digest()
+
+    # 将摘要转换为 Base64 字符串
+    return base64.b64encode(digest).decode('utf-8')
 
 def upload_and_set_metadata(access_key, secret_key, bucket_name, file_path, key, tags, category):
     q = Auth(access_key, secret_key)
@@ -21,48 +40,36 @@ def upload_and_set_metadata(access_key, secret_key, bucket_name, file_path, key,
 
     # 第二步：构造双重URL编码的路径参数
     entry = f"{bucket_name}:{key}"
-    encoded_entry = quote(quote(entry, safe=""))  # 双重编码
+    encodedEntryURI = urlsafe_base64_encode(entry) # 双重编码
 
     # 构造MIME占位参数
-    encoded_mime = quote(quote("", safe=""))  # 空字符串双重编码
+    encoded_mime =urlsafe_base64_encode("")  # 空字符串双重编码
+
+    stat_url = f"https://rs.qiniuapi.com/stat/{encodedEntryURI}"
+    stat_token = q.token_of_request(stat_url)
+    print(stat_url)
+    response = requests.post(stat_url, headers={"Authorization": f"QBox {stat_token}"})
+    print(response.text)  # 应返回文件信息，而非 401
 
     # 构造元数据参数
     meta_parts = []
     metadata = {
         "user": "1",
-        "tags": ",".join(tags),
-        "category": category
+      #  "tags": ",".join(tags),
+       # "category": category
     }
-    for meta_key, value in metadata.items():
-        encoded_key = quote(quote(f"x-qn-meta-{meta_key}", safe=""))
-        encoded_value = quote(quote(str(value), safe=""))
-        meta_parts.append(f"{encoded_key}/{encoded_value}")
-
-    # 构造完整请求路径
-    request_path = f"/chgm/{encoded_entry}/mime/{encoded_mime}/{'/'.join(meta_parts)}"
-
-    # 手动生成签名
-    signing_str = f"POST {request_path}\nHost: rs.qiniuapi.com\nContent-Type: application/x-www-form-urlencoded\n\n"
-    secret_key = q.get_secret_key()  
-    sign = hmac.new(
-        secret_key,
-        signing_str.encode(),
-        hashlib.sha1
-    ).digest()
-    encoded_sign = urlsafe_base64_encode(sign)
-    token = f"{access_key}:{encoded_sign}".replace("=","")
-
-    # 设置请求头
-    timestamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-    headers = {
-        "Authorization": f"Qiniu {token}",
-        "X-Qiniu-Date": timestamp,
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-
-    # 发送请求
+    meta_key = "x-qn-meta-user"
+    meta_value = "1"
+    request_path = (f"/chgm/{encodedEntryURI}/mime/{urlsafe_base64_encode('image/png')}/"
+                    f"{urlsafe_base64_encode(meta_key).replace("=","")}/{urlsafe_base64_encode(meta_value).replace("=","")}")
     full_url = f"https://rs.qiniuapi.com{request_path}"
-    response = requests.post(full_url, headers=headers, data=None)
+
+    # 4. 使用SDK生成签名（推荐）
+    token = q.token_of_request(request_path)
+    headers = {"Authorization":f"QBox {token}"}
+
+    # 5. 发送请求
+    response = requests.post(full_url, headers=headers)
     print("Request Path:", request_path)
     print("Full URL:", full_url)
     print("Token:", token)
@@ -76,12 +83,14 @@ def upload_and_set_metadata(access_key, secret_key, bucket_name, file_path, key,
 
 
 if __name__ == "__main__":
-    access_key = "zzdIIpWEZBJYyoLbJkY3OqkfjPu9hsXSUucflboK"
-    secret_key = "p-4gx6LYzySYoxSmnl86JQKUKsQU6gUjnrIKEdOk"
+    access_key = "NT8GPMLylWq3_WIl9aNk1zAUWTJtoWrGGVqbvKxh"
+    secret_key = "uNj2QCpEElzFF4ZkFkvjrBrDITB9ZpO_0ixDbfXD"
     bucket_name = "photoxw"
     local_file = "shi2.jpg"
     file_key = f"images/{local_file}"
-    tags,category=ai_image(local_file)
+   # tags,category=ai_image(local_file)
+    tags=["aaa","sas"]
+    category="ddd"
     url = upload_and_set_metadata(access_key, secret_key, bucket_name, local_file, file_key, tags, category)
     if url:
         print("文件外链:", url)
